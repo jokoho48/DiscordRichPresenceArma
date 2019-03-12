@@ -9,6 +9,6 @@
  * None
  */
 
-addMissionEventHandler ["EachFrame", {
-
+addMissionEventHandler ["Ended", {
+    params ["_endType"];
 }];

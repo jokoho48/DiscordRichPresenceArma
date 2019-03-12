@@ -1,14 +1,10 @@
 ﻿#region
-
-using System;
 using System.Diagnostics;
-using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using DiscordRPC;
 using DiscordRPC.Logging;
-using DiscordRPC.Message;
 #endregion
 
 namespace DiscordRichPresenceArma
