@@ -330,3 +330,5 @@ ASALocalRun/
 .mfractor/
 /Data/*.afdesign
 @DiscordRichtPresenceArma/DiscordRichPresenceArma.dll.config
+@DiscordRichtPresenceArma/addons/armake2.exe
+*.pbo

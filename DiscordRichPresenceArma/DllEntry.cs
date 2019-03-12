@@ -1,4 +1,6 @@
 ﻿#region
+
+using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -18,7 +20,7 @@ namespace DiscordRichPresenceArma
         {
             Details = "This is a Test",
             State = "In Menu",
-            Timestamps = Timestamps.Now,
+            Timestamps = new Timestamps(DateTime.UtcNow),
             Assets = new Assets()
             {
                 LargeImageKey = "default",
@@ -31,13 +33,16 @@ namespace DiscordRichPresenceArma
         /// </summary>
         private static readonly DiscordRpcClient Client;
 
-        public static Timestamps MissionStartUpTime = Timestamps.Now;
+        private static Timestamps MissionStartUpTime = Timestamps.Now;
         static DllEntry()
         {
             CosturaUtility.Initialize();
             Client = new DiscordRpcClient("554274274949595146")
             {
-                Logger = new ConsoleLogger()
+                #if DEBUG
+                //Logger = new ArmaLogger {Level = LogLevel.Trace}
+                Logger = new ConsoleLogger{Level = LogLevel.Trace, Coloured = true}
+                #endif
             };
             Client.Initialize();
 
@@ -97,10 +102,13 @@ namespace DiscordRichPresenceArma
                     Client.SetPresence(DefaultPresence);
                     break;
                 case "close":
-                    Client.Dispose();
+                    Dispose();
                     break;
                 case "init":
                     Client.Logger.Trace("Client Started");
+                    break;
+                case "readlogs":
+                    output.Append(((ArmaLogger) Client.Logger).ReadLogs());
                     break;
             }
         }
@@ -127,7 +135,8 @@ namespace DiscordRichPresenceArma
             switch (function)
             {
                 case "presenceUpdate" when args.Length != 4:
-                    return 0;
+                    Client.Logger.Trace("No Valid PresenceUpdate Data count");
+                    break;
                 case "presenceUpdate":
                     Client.SetPresence(new RichPresence
                     {
@@ -145,9 +154,8 @@ namespace DiscordRichPresenceArma
                     Client.Invoke();
                     break;
                 case "serverStartTimeUpdate" when double.TryParse(args[0], out double result):
-                    //MissionStartUpTime = new Timestamps(DateTime.Now.AddSeconds(result));
-                    //MissionStartUpTime = Timestamps.FromTimeSpan(result);
-                    MissionStartUpTime = Timestamps.Now; // TODO: Find a way to set this in the past
+                    TimeSpan ts = TimeSpan.FromSeconds(result);
+                    MissionStartUpTime = new Timestamps(DateTime.UtcNow - ts, null);
                     break;
                 case "serverStartTimeUpdate":
                     Client.Logger.Trace($"No Valid Server Start Time Data! {args[0]}");
