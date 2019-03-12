@@ -124,36 +124,36 @@ namespace DiscordRichPresenceArma
             [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr, SizeParamIndex = 4)]
             string[] args, int argCount)
         {
-            if (function == "presenceUpdate")
+            switch (function)
             {
-                if (args.Length != 4) return 0;
-                Client.SetPresence(new RichPresence
-                {
-                    Details = $"{'"'}{args[0]}{'"'} on {args[1]}",
-                    State = $"{(args[2] == "" ? "In Singleplayer Mission" : $"On {'"'}{ args[2]}{'"'} Server")}",
-                    Timestamps = MissionStartUpTime,
-                    Assets = new Assets
+                case "presenceUpdate" when args.Length != 4:
+                    return 0;
+                case "presenceUpdate":
+                    Client.SetPresence(new RichPresence
                     {
-                        LargeImageKey = args[3],
-                        LargeImageText= args[1],
-                        SmallImageKey = "default",
-                        SmallImageText = "Arma 3"
-                    }
-                });
-                Client.Invoke();
-            } else if (function == "serverStartTimeUpdate")
-            {
-                if (double.TryParse(args[0], out double result))
-                {
+                        Details = $"{'"'}{args[0]}{'"'} on {args[1]}",
+                        State = $"{(args[2] == "" ? "In Singleplayer Mission" : $"On {'"'}{ args[2]}{'"'} Server")}",
+                        Timestamps = MissionStartUpTime,
+                        Assets = new Assets
+                        {
+                            LargeImageKey = args[3],
+                            LargeImageText= args[1],
+                            SmallImageKey = "default",
+                            SmallImageText = "Arma 3"
+                        }
+                    });
+                    Client.Invoke();
+                    break;
+                case "serverStartTimeUpdate" when double.TryParse(args[0], out double result):
                     //MissionStartUpTime = new Timestamps(DateTime.Now.AddSeconds(result));
                     //MissionStartUpTime = Timestamps.FromTimeSpan(result);
                     MissionStartUpTime = Timestamps.Now; // TODO: Find a way to set this in the past
-                }
-                else
-                {
+                    break;
+                case "serverStartTimeUpdate":
                     Client.Logger.Trace($"No Valid Server Start Time Data! {args[0]}");
-                }
+                    break;
             }
+
             return 0;
         }
     }
