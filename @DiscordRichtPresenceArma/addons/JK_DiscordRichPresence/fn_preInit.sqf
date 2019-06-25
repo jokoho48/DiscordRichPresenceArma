@@ -9,9 +9,9 @@
  * Return Value:
  * None
  */
-JK_DiscordRichPresence_SplitString = toString [1];
 
 #ifdef ISDEV
+JK_DiscordRichPresence_SplitString = toString [1];
 addMissionEventHandler ["EachFrame", {
     private _result = "DiscordRichPresenceArma" callExtension "readlogs";
     {
@@ -19,6 +19,6 @@ addMissionEventHandler ["EachFrame", {
             diag_log _x;
         };
         nil
-    } count _result splitString JK_DiscordRichPresence_SplitString;
+    } count (_result splitString JK_DiscordRichPresence_SplitString);
 }];
 #endif

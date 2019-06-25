@@ -10,7 +10,10 @@
  * None
  */
 
-if !(isNull player) then {
+if (hasInterface) then {
+    if (isText(missionConfigFile >> "JK_DiscordRichPresence" >> "CustomAppID")) then {
+        "DiscordRichPresenceArma" callExtension ["customAppId", getText(missionConfigFile >> "JK_DiscordRichPresence" >> "CustomAppID")];
+    };
     "DiscordRichPresenceArma" callExtension ["serverStartTimeUpdate", str(serverTime)];
 
     "DiscordRichPresenceArma" callExtension ["presenceUpdate", briefingName, getText (configFile >> "CfgWorlds" >> worldName >> "description"), serverName, worldName];

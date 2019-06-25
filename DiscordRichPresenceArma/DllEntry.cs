@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using DiscordRPC;
 using DiscordRPC.Logging;
@@ -28,26 +29,19 @@ namespace DiscordRichPresenceArma
             }
         };
 
+        private const string DefaultAppId = "554274274949595146";
+        private static string _appid = DefaultAppId;
+
         /// <summary>
         /// The discord client
         /// </summary>
-        private static readonly DiscordRpcClient Client;
+        private static DiscordRpcClient _client;
 
         private static Timestamps MissionStartUpTime = Timestamps.Now;
         static DllEntry()
         {
             CosturaUtility.Initialize();
-            Client = new DiscordRpcClient("554274274949595146")
-            {
-                #if DEBUG
-                //Logger = new ArmaLogger {Level = LogLevel.Trace}
-                Logger = new ConsoleLogger{Level = LogLevel.Trace, Coloured = true}
-                #endif
-            };
-            Client.Initialize();
-
-            //Send a presence. Do this as many times as you want
-            Client.SetPresence(DefaultPresence);
+            InitClient();
         }
 
         ~DllEntry()
@@ -55,10 +49,25 @@ namespace DiscordRichPresenceArma
             Dispose();
         }
 
+        private static void InitClient()
+        {
+            _client = new DiscordRpcClient(_appid)
+            {
+#if DEBUG
+                //Logger = new ArmaLogger {Level = LogLevel.Trace}
+                Logger = new ConsoleLogger { Level = LogLevel.Trace, Coloured = true }
+#endif
+            };
+            _client.Initialize();
+
+            //Send a presence. Do this as many times as you want
+            _client.SetPresence(DefaultPresence);
+            _client.Invoke();
+        }
         public static void Dispose()
         {
-            Client.Dispose();
-            Client.ClearPresence();
+            _client.Dispose();
+            _client.ClearPresence();
         }
         /// <summary>
         ///     Gets called when arma starts up and loads all extension.
@@ -92,23 +101,27 @@ namespace DiscordRichPresenceArma
             [MarshalAs(UnmanagedType.LPStr)] string function)
         {
             function = function.ToLowerInvariant();
+
+
             switch (function)
             {
                 case "version":
                     output.Append(FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(DllEntry)).Location).FileVersion);
                     break;
                 case "end":
+                    _appid = DefaultAppId;
+                    InitClient();
                     MissionStartUpTime = null;
-                    Client.SetPresence(DefaultPresence);
+                    _client.SetPresence(DefaultPresence);
                     break;
                 case "close":
                     Dispose();
                     break;
                 case "init":
-                    Client.Logger.Trace("Client Started");
+                    _client.Logger.Trace("Client Started");
                     break;
                 case "readlogs":
-                    output.Append(((ArmaLogger) Client.Logger).ReadLogs());
+                    output.Append(((ArmaLogger) _client.Logger).ReadLogs());
                     break;
             }
         }
@@ -135,10 +148,10 @@ namespace DiscordRichPresenceArma
             switch (function)
             {
                 case "presenceUpdate" when args.Length != 4:
-                    Client.Logger.Trace("No Valid PresenceUpdate Data count");
+                    _client.Logger.Trace("No Valid PresenceUpdate Data count");
                     break;
                 case "presenceUpdate":
-                    Client.SetPresence(new RichPresence
+                    _client.SetPresence(new RichPresence
                     {
                         Details = $"{'"'}{args[0]}{'"'} on {args[1]}",
                         State = $"{(args[2] == "" ? "In Singleplayer Mission" : $"On {'"'}{ args[2]}{'"'} Server")}",
@@ -151,15 +164,20 @@ namespace DiscordRichPresenceArma
                             SmallImageText = "Arma 3"
                         }
                     });
-                    Client.Invoke();
+                    _client.Invoke();
                     break;
                 case "serverStartTimeUpdate" when double.TryParse(args[0], out double result):
                     TimeSpan ts = TimeSpan.FromSeconds(result);
                     MissionStartUpTime = new Timestamps(DateTime.UtcNow - ts, null);
                     break;
                 case "serverStartTimeUpdate":
-                    Client.Logger.Trace($"No Valid Server Start Time Data! {args[0]}");
+                    _client.Logger.Trace($"No Valid Server Start Time Data! {args[0]}");
                     break;
+                case "customAppId":
+                    _appid = args[0];
+                    InitClient();
+                    break;
+
             }
 
             return 0;
